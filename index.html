@@ -16,14 +16,27 @@
       <main class="canvas-wrap">
         <canvas id="gameCanvas" width="900" height="560" aria-label="Cat chase game canvas"></canvas>
 
-        <div id="overlay" class="overlay hidden" role="dialog" aria-live="polite">
+        <div id="overlay" class="overlay" role="dialog" aria-live="polite">
           <div class="overlay-card">
-            <h1>Time's Up!</h1>
-            <p>Your final score: <strong id="finalScore">0</strong></p>
-            <button id="playAgain" type="button">Play Again</button>
-            <p class="controls-help">
-              Controls: Sadie = Arrow Keys, Lila = W A S D
-            </p>
+            <div id="startPanel">
+              <h1>Forest Cat Chase</h1>
+              <p>Help Sadie and Lila chase magical cats through the forest.</p>
+              <p class="rules">
+                <strong>Controls:</strong> Sadie = Arrow Keys, Lila = W A S D<br />
+                <strong>Rules:</strong> Catch Boo for +1 point. If Sully catches a girl, -1 point.<br />
+                Trees and rocks block the girls, but cats move through obstacles.
+              </p>
+              <button id="startGame" type="button">Start Game</button>
+            </div>
+
+            <div id="endPanel" class="hidden">
+              <h1>Time's Up!</h1>
+              <p>Your final score: <strong id="finalScore">0</strong></p>
+              <button id="playAgain" type="button">Play Again</button>
+              <p class="controls-help">
+                Controls: Sadie = Arrow Keys, Lila = W A S D
+              </p>
+            </div>
           </div>
         </div>
       </main>

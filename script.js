@@ -5,6 +5,9 @@ const timerEl = document.getElementById('timer');
 const scoreEl = document.getElementById('score');
 const finalScoreEl = document.getElementById('finalScore');
 const overlayEl = document.getElementById('overlay');
+const startPanelEl = document.getElementById('startPanel');
+const endPanelEl = document.getElementById('endPanel');
+const startGameBtn = document.getElementById('startGame');
 const playAgainBtn = document.getElementById('playAgain');
 
 const WORLD = {
@@ -299,6 +302,18 @@ function resetGame() {
   overlayEl.classList.add('hidden');
 }
 
+function showStartOverlay() {
+  startPanelEl.classList.remove('hidden');
+  endPanelEl.classList.add('hidden');
+  overlayEl.classList.remove('hidden');
+}
+
+function showEndOverlay() {
+  startPanelEl.classList.add('hidden');
+  endPanelEl.classList.remove('hidden');
+  overlayEl.classList.remove('hidden');
+}
+
 function updateHud() {
   timerEl.textContent = String(timeLeft);
   scoreEl.textContent = String(score);
@@ -308,7 +323,7 @@ function endGame() {
   gameOver = true;
   stopMusic();
   finalScoreEl.textContent = String(score);
-  overlayEl.classList.remove('hidden');
+  showEndOverlay();
 }
 
 function handleInput(player, dt) {
@@ -662,8 +677,6 @@ function gameLoop(timestamp) {
 }
 
 window.addEventListener('keydown', (event) => {
-  startRoundIfNeeded();
-
   if (event.code in keys || event.code.startsWith('Arrow') || event.code.startsWith('Key')) {
     keys[event.code] = true;
   }
@@ -677,10 +690,16 @@ window.addEventListener('keyup', (event) => {
   keys[event.code] = false;
 });
 
+startGameBtn.addEventListener('click', () => {
+  overlayEl.classList.add('hidden');
+  startRoundIfNeeded();
+});
+
 playAgainBtn.addEventListener('click', () => {
   resetGame();
   startRoundIfNeeded();
 });
 
 resetGame();
+showStartOverlay();
 requestAnimationFrame(gameLoop);

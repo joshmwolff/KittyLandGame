@@ -76,6 +76,10 @@ canvas {
   display: none;
 }
 
+.hidden {
+  display: none;
+}
+
 .overlay-card {
   width: min(88%, 360px);
   text-align: center;
@@ -95,7 +99,8 @@ canvas {
   margin: 8px 0;
 }
 
-#playAgain {
+#playAgain,
+#startGame {
   margin-top: 12px;
   border: 0;
   border-radius: 999px;
@@ -107,13 +112,20 @@ canvas {
   cursor: pointer;
 }
 
-#playAgain:hover {
+#playAgain:hover,
+#startGame:hover {
   filter: brightness(1.05);
 }
 
 .controls-help {
   font-size: 0.88rem;
   color: #5f5770;
+}
+
+.rules {
+  font-size: 0.9rem;
+  color: #514a61;
+  line-height: 1.45;
 }
 
 @media (max-width: 640px) {
