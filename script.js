@@ -17,6 +17,8 @@ const WORLD = {
 };
 
 const GAME_LENGTH_SECONDS = 90;
+const PHIL_SPAWN_MIN_SECONDS = 10;
+const PHIL_SPAWN_MAX_SECONDS = 15;
 const MUSIC_BPM = 120;
 const MUSIC_BEAT_SECONDS = 60 / MUSIC_BPM;
 const MUSIC_DURATION_SECONDS = GAME_LENGTH_SECONDS;
@@ -108,6 +110,17 @@ const cats = [
     formInterval: 8,
   },
 ];
+
+const phil = {
+  name: 'Phil',
+  x: WORLD.width * 0.5,
+  y: -60,
+  width: 34,
+  height: 34,
+  fallSpeed: 170,
+  active: false,
+  nextSpawnTimer: 0,
+};
 
 const chordProgression = [
   [60, 64, 67], // C
@@ -243,6 +256,22 @@ function randomizeDirection(catEntity) {
   catEntity.directionY = Math.sin(angle);
 }
 
+function schedulePhilSpawn() {
+  phil.nextSpawnTimer = randomRange(PHIL_SPAWN_MIN_SECONDS, PHIL_SPAWN_MAX_SECONDS);
+}
+
+function spawnPhil() {
+  phil.x = randomRange(phil.width * 0.5 + 12, WORLD.width - phil.width * 0.5 - 12);
+  phil.y = -phil.height;
+  phil.active = true;
+}
+
+function resetPhil() {
+  phil.active = false;
+  phil.y = -phil.height;
+  schedulePhilSpawn();
+}
+
 function scheduleNextFormChange(catEntity) {
   catEntity.formTimer = 0;
   catEntity.formInterval = randomRange(5, 10);
@@ -297,6 +326,7 @@ function resetGame() {
     catEntity.jaggedTimer = 0;
     catEntity.jaggedInterval = randomRange(0.12, 0.3);
   });
+  resetPhil();
 
   updateHud();
   overlayEl.classList.add('hidden');
@@ -419,6 +449,37 @@ function checkCollisions() {
         break;
       }
     }
+  }
+
+  if (phil.active) {
+    for (const girl of girls) {
+      const dx = girl.x - phil.x;
+      const dy = girl.y - phil.y;
+      const catchDistance = girl.radius + Math.max(phil.width, phil.height) * 0.42;
+      if (Math.hypot(dx, dy) < catchDistance) {
+        score += 3;
+        phil.active = false;
+        schedulePhilSpawn();
+        updateHud();
+        break;
+      }
+    }
+  }
+}
+
+function updatePhil(dt) {
+  if (!phil.active) {
+    phil.nextSpawnTimer -= dt;
+    if (phil.nextSpawnTimer <= 0) {
+      spawnPhil();
+    }
+    return;
+  }
+
+  phil.y += phil.fallSpeed * dt;
+  if (phil.y - phil.height * 0.5 > WORLD.height) {
+    phil.active = false;
+    schedulePhilSpawn();
   }
 }
 
@@ -630,9 +691,33 @@ function drawCat(cat) {
   ctx.fillText(name, x, y + radius + 18);
 }
 
+function drawPhil() {
+  if (!phil.active) return;
+
+  const x = phil.x;
+  const y = phil.y;
+  const w = phil.width;
+  const h = phil.height;
+
+  ctx.fillStyle = '#f7f1d6';
+  ctx.fillRect(x - w * 0.5, y - h * 0.5, w, h);
+  ctx.strokeStyle = '#d9cfa4';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x - w * 0.5, y - h * 0.5, w, h);
+
+  ctx.fillStyle = '#e5ddb8';
+  ctx.fillRect(x - w * 0.45, y - h * 0.18, w * 0.9, h * 0.14);
+
+  ctx.fillStyle = '#000000';
+  ctx.font = '11px Trebuchet MS';
+  ctx.textAlign = 'center';
+  ctx.fillText('Phil', x, y + h * 0.95);
+}
+
 function draw() {
   drawGardenBackground();
   drawObstacles();
+  drawPhil();
   cats.forEach(drawCat);
   girls.forEach(drawPrincess);
 }
@@ -644,6 +729,7 @@ function update(dt) {
 
   girls.forEach((player) => handleInput(player, dt));
   cats.forEach((catEntity) => moveCat(catEntity, dt));
+  updatePhil(dt);
   checkCollisions();
 
   countdownAccumulator += dt;
