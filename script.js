@@ -16,9 +16,11 @@ const WORLD = {
   padding: 8,
 };
 
-const GAME_LENGTH_SECONDS = 90;
+const GAME_LENGTH_SECONDS = 60;
 const PHIL_SPAWN_MIN_SECONDS = 10;
 const PHIL_SPAWN_MAX_SECONDS = 15;
+const BOSS_TRIGGER_SECONDS = 10;
+const BOSS_PENALTY_POINTS = 5;
 const MUSIC_BPM = 120;
 const MUSIC_BEAT_SECONDS = 60 / MUSIC_BPM;
 const MUSIC_DURATION_SECONDS = GAME_LENGTH_SECONDS;
@@ -35,6 +37,7 @@ let audioContext = null;
 let musicTimerId = null;
 let musicBeatIndex = 0;
 let musicPlaying = false;
+let musicMode = 'whimsical';
 
 const keys = Object.create(null);
 
@@ -122,6 +125,23 @@ const phil = {
   nextSpawnTimer: 0,
 };
 
+const boss = {
+  name: 'Grumpy Dada',
+  active: false,
+  hasCompletedPass: false,
+  touchingSadie: false,
+  touchingLila: false,
+  x: -80,
+  y: WORLD.height * 0.42,
+  width: 70,
+  height: 92,
+  speedX: 132,
+  zigzagAmplitude: 75,
+  zigzagFrequency: 0.91,
+  baseY: WORLD.height * 0.42,
+  phase: 0,
+};
+
 const chordProgression = [
   [60, 64, 67], // C
   [67, 71, 74], // G
@@ -131,6 +151,15 @@ const chordProgression = [
 
 const bassProgression = [36, 43, 45, 41];
 const melodyPattern = [72, 74, 76, 79, 76, 74, 72, null, 74, 76, 79, 81, 79, 76, 74, null];
+
+const dramaticChordProgression = [
+  [57, 60, 64], // Am
+  [53, 57, 60], // F
+  [55, 59, 62], // G
+  [52, 55, 59], // Em
+];
+const dramaticBassProgression = [33, 29, 31, 28];
+const dramaticMelodyPattern = [69, null, 72, 74, 72, null, 69, 67, 69, null, 72, 74, 76, 74, 72, null];
 
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
@@ -189,18 +218,35 @@ function scheduleMusicBeat() {
 
   const now = audioContext.currentTime;
   const startTime = now + 0.02;
-  const progressionIndex = Math.floor(musicBeatIndex / 4) % chordProgression.length;
+  const dramatic = musicMode === 'dramatic';
+  const activeChords = dramatic ? dramaticChordProgression : chordProgression;
+  const activeBass = dramatic ? dramaticBassProgression : bassProgression;
+  const activeMelody = dramatic ? dramaticMelodyPattern : melodyPattern;
+
+  const progressionIndex = Math.floor(musicBeatIndex / 4) % activeChords.length;
   const beatInBar = musicBeatIndex % 4;
 
   if (beatInBar === 0) {
-    playChord(chordProgression[progressionIndex], startTime, MUSIC_BEAT_SECONDS * 1.8);
+    playChord(activeChords[progressionIndex], startTime, MUSIC_BEAT_SECONDS * 1.8);
   }
 
-  playTone(midiToFrequency(bassProgression[progressionIndex]), startTime, MUSIC_BEAT_SECONDS * 0.48, 0.055, 'sine');
+  playTone(
+    midiToFrequency(activeBass[progressionIndex]),
+    startTime,
+    MUSIC_BEAT_SECONDS * 0.48,
+    dramatic ? 0.07 : 0.055,
+    dramatic ? 'triangle' : 'sine'
+  );
 
-  const melodyMidi = melodyPattern[musicBeatIndex % melodyPattern.length];
+  const melodyMidi = activeMelody[musicBeatIndex % activeMelody.length];
   if (melodyMidi !== null) {
-    playTone(midiToFrequency(melodyMidi), startTime, MUSIC_BEAT_SECONDS * 0.7, 0.06, 'square');
+    playTone(
+      midiToFrequency(melodyMidi),
+      startTime,
+      MUSIC_BEAT_SECONDS * (dramatic ? 0.82 : 0.7),
+      dramatic ? 0.072 : 0.06,
+      dramatic ? 'sawtooth' : 'square'
+    );
   }
 
   musicBeatIndex += 1;
@@ -272,6 +318,46 @@ function resetPhil() {
   schedulePhilSpawn();
 }
 
+function startBossPass() {
+  boss.active = true;
+  boss.x = -boss.width;
+  boss.baseY = WORLD.height * 0.42;
+  boss.phase = randomRange(0, Math.PI * 2);
+  musicMode = 'dramatic';
+  boss.touchingSadie = false;
+  boss.touchingLila = false;
+}
+
+function resetBoss() {
+  boss.active = false;
+  boss.hasCompletedPass = false;
+  boss.touchingSadie = false;
+  boss.touchingLila = false;
+  boss.x = -boss.width;
+  boss.baseY = WORLD.height * 0.42;
+  boss.phase = randomRange(0, Math.PI * 2);
+  boss.y = boss.baseY;
+}
+
+function updateBoss(dt) {
+  if (!boss.active && !boss.hasCompletedPass && timeLeft <= BOSS_TRIGGER_SECONDS) {
+    startBossPass();
+  }
+
+  if (!boss.active) {
+    return;
+  }
+
+  boss.x += boss.speedX * dt;
+  boss.phase += dt * boss.zigzagFrequency;
+  boss.y = boss.baseY + Math.sin(boss.phase * Math.PI * 2) * boss.zigzagAmplitude;
+
+  if (boss.x - boss.width * 0.5 > WORLD.width + boss.width) {
+    boss.active = false;
+    boss.hasCompletedPass = true;
+  }
+}
+
 function scheduleNextFormChange(catEntity) {
   catEntity.formTimer = 0;
   catEntity.formInterval = randomRange(5, 10);
@@ -319,6 +405,8 @@ function resetGame() {
   cats[1].x = 740;
   cats[1].y = 350;
 
+  musicMode = 'whimsical';
+
   setCatMode(cats[0], 'boo');
   setCatMode(cats[1], 'sully');
   cats.forEach((catEntity) => {
@@ -327,6 +415,7 @@ function resetGame() {
     catEntity.jaggedInterval = randomRange(0.12, 0.3);
   });
   resetPhil();
+  resetBoss();
 
   updateHud();
   overlayEl.classList.add('hidden');
@@ -465,6 +554,31 @@ function checkCollisions() {
       }
     }
   }
+
+  if (boss.active) {
+    const bossRect = {
+      x: boss.x - boss.width * 0.5,
+      y: boss.y - boss.height * 0.5,
+      width: boss.width,
+      height: boss.height,
+    };
+
+    const touchingSadieNow = circleIntersectsRect(girls[0].x, girls[0].y, girls[0].radius, bossRect);
+    const touchingLilaNow = circleIntersectsRect(girls[1].x, girls[1].y, girls[1].radius, bossRect);
+
+    if (touchingSadieNow && !boss.touchingSadie) {
+      score -= BOSS_PENALTY_POINTS;
+      updateHud();
+    }
+
+    if (touchingLilaNow && !boss.touchingLila) {
+      score -= BOSS_PENALTY_POINTS;
+      updateHud();
+    }
+
+    boss.touchingSadie = touchingSadieNow;
+    boss.touchingLila = touchingLilaNow;
+  }
 }
 
 function updatePhil(dt) {
@@ -561,24 +675,34 @@ function drawObstacles() {
 
 function drawPrincess(player) {
   const { x, y, radius, dressColor, crownColor, hairColor, name } = player;
+
+  // Dress (simple triangle like the reference)
   ctx.fillStyle = dressColor;
   ctx.beginPath();
-  ctx.moveTo(x, y + radius + 20);
-  ctx.lineTo(x - radius - 10, y + radius - 6);
-  ctx.lineTo(x + radius + 10, y + radius - 6);
+  ctx.moveTo(x, y + radius + 22);
+  ctx.lineTo(x - radius - 14, y + radius - 4);
+  ctx.lineTo(x + radius + 14, y + radius - 4);
   ctx.closePath();
   ctx.fill();
 
+  // Hair: only top + side locks, with bottom ending above chin level
   ctx.fillStyle = hairColor;
   ctx.beginPath();
-  ctx.arc(x, y + 1, radius * 0.82, 0, Math.PI * 2);
+  ctx.arc(x, y - 6, radius * 0.88, Math.PI, 0);
   ctx.fill();
 
+  ctx.beginPath();
+  ctx.ellipse(x - radius * 0.52, y + 1, radius * 0.34, radius * 0.52, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + radius * 0.52, y + 1, radius * 0.34, radius * 0.52, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Face
   ctx.fillStyle = '#f8d8bf';
   ctx.beginPath();
-  ctx.arc(x, y - 2, radius * 0.65, 0, Math.PI * 2);
+  ctx.arc(x, y - 2, radius * 0.62, 0, Math.PI * 2);
   ctx.fill();
 
+  // Eyes + smile
   ctx.fillStyle = '#222';
   ctx.beginPath();
   ctx.arc(x - 4, y - 4, 1.5, 0, Math.PI * 2);
@@ -591,6 +715,7 @@ function drawPrincess(player) {
   ctx.arc(x, y + 2, 4, 0.2, Math.PI - 0.2);
   ctx.stroke();
 
+  // Crown
   ctx.fillStyle = crownColor;
   ctx.beginPath();
   ctx.moveTo(x - 10, y - radius - 2);
@@ -601,16 +726,16 @@ function drawPrincess(player) {
   ctx.closePath();
   ctx.fill();
 
-  // Simple magic wand
+  // Wand
   ctx.strokeStyle = '#8a6f4f';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(x + radius * 0.7, y + radius * 0.3);
-  ctx.lineTo(x + radius * 1.45, y - radius * 0.55);
+  ctx.moveTo(x + radius * 0.66, y + radius * 0.22);
+  ctx.lineTo(x + radius * 1.4, y - radius * 0.5);
   ctx.stroke();
 
-  const wandX = x + radius * 1.45;
-  const wandY = y - radius * 0.55;
+  const wandX = x + radius * 1.4;
+  const wandY = y - radius * 0.5;
   ctx.fillStyle = '#ffd66e';
   ctx.beginPath();
   ctx.moveTo(wandX, wandY - 4);
@@ -714,11 +839,72 @@ function drawPhil() {
   ctx.fillText('Phil', x, y + h * 0.95);
 }
 
+function drawBoss() {
+  if (!boss.active) return;
+
+  const x = boss.x;
+  const y = boss.y;
+  const w = boss.width;
+  const h = boss.height;
+
+  // Body
+  ctx.fillStyle = '#5c6b8a';
+  ctx.fillRect(x - w * 0.38, y - h * 0.08, w * 0.76, h * 0.56);
+
+  // Head
+  ctx.fillStyle = '#f0c5a6';
+  ctx.beginPath();
+  ctx.arc(x, y - h * 0.33, w * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Caesar cut hair (short black block)
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(x - w * 0.3, y - h * 0.55, w * 0.6, h * 0.18);
+  ctx.fillRect(x - w * 0.24, y - h * 0.39, w * 0.48, h * 0.08);
+
+  // Face
+  ctx.fillStyle = '#1f1f1f';
+  ctx.beginPath();
+  ctx.arc(x - 7, y - h * 0.34, 1.6, 0, Math.PI * 2);
+  ctx.arc(x + 7, y - h * 0.34, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#5d2f2f';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(x, y - h * 0.24, 5, Math.PI + 0.25, Math.PI * 2 - 0.25);
+  ctx.stroke();
+
+  // Speech bubble
+  const bubbleW = 116;
+  const bubbleH = 30;
+  const bx = x - bubbleW * 0.5;
+  const by = y - h * 0.92;
+  ctx.fillStyle = '#fffdf9';
+  ctx.strokeStyle = '#7f7065';
+  ctx.lineWidth = 2;
+  ctx.fillRect(bx, by, bubbleW, bubbleH);
+  ctx.strokeRect(bx, by, bubbleW, bubbleH);
+  ctx.beginPath();
+  ctx.moveTo(x - 8, by + bubbleH);
+  ctx.lineTo(x + 3, by + bubbleH);
+  ctx.lineTo(x - 2, by + bubbleH + 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#222';
+  ctx.font = 'bold 14px Trebuchet MS';
+  ctx.textAlign = 'center';
+  ctx.fillText("It's Bedtime!", x, by + 20);
+}
+
 function draw() {
   drawGardenBackground();
   drawObstacles();
   drawPhil();
   cats.forEach(drawCat);
+  drawBoss();
   girls.forEach(drawPrincess);
 }
 
@@ -730,6 +916,7 @@ function update(dt) {
   girls.forEach((player) => handleInput(player, dt));
   cats.forEach((catEntity) => moveCat(catEntity, dt));
   updatePhil(dt);
+  updateBoss(dt);
   checkCollisions();
 
   countdownAccumulator += dt;
