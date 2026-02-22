@@ -847,32 +847,66 @@ function drawBoss() {
   const w = boss.width;
   const h = boss.height;
 
-  // Body
-  ctx.fillStyle = '#5c6b8a';
-  ctx.fillRect(x - w * 0.38, y - h * 0.08, w * 0.76, h * 0.56);
-
-  // Head
-  ctx.fillStyle = '#f0c5a6';
+  // Shirt (heather gray like the photo)
+  ctx.fillStyle = '#8a8b8f';
   ctx.beginPath();
-  ctx.arc(x, y - h * 0.33, w * 0.3, 0, Math.PI * 2);
+  ctx.moveTo(x - w * 0.46, y + h * 0.28);
+  ctx.lineTo(x + w * 0.46, y + h * 0.28);
+  ctx.lineTo(x + w * 0.34, y - h * 0.02);
+  ctx.lineTo(x - w * 0.34, y - h * 0.02);
+  ctx.closePath();
   ctx.fill();
 
-  // Caesar cut hair (short black block)
-  ctx.fillStyle = '#111111';
-  ctx.fillRect(x - w * 0.3, y - h * 0.55, w * 0.6, h * 0.18);
-  ctx.fillRect(x - w * 0.24, y - h * 0.39, w * 0.48, h * 0.08);
+  // Neck
+  ctx.fillStyle = '#dfb396';
+  ctx.fillRect(x - w * 0.08, y - h * 0.1, w * 0.16, h * 0.15);
 
-  // Face
+  // Head (slightly oval)
+  ctx.fillStyle = '#e7b89b';
+  ctx.beginPath();
+  ctx.ellipse(x, y - h * 0.33, w * 0.29, h * 0.25, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Short dark textured hair, photo-inspired
+  ctx.fillStyle = '#242424';
+  ctx.beginPath();
+  ctx.ellipse(x, y - h * 0.46, w * 0.31, h * 0.13, 0, Math.PI, 0);
+  ctx.fill();
+
+  // Slightly spiky top silhouette
+  ctx.beginPath();
+  ctx.moveTo(x - w * 0.2, y - h * 0.51);
+  ctx.lineTo(x - w * 0.12, y - h * 0.57);
+  ctx.lineTo(x - w * 0.05, y - h * 0.52);
+  ctx.lineTo(x + w * 0.04, y - h * 0.59);
+  ctx.lineTo(x + w * 0.14, y - h * 0.53);
+  ctx.lineTo(x + w * 0.23, y - h * 0.56);
+  ctx.lineTo(x + w * 0.2, y - h * 0.47);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eyes
   ctx.fillStyle = '#1f1f1f';
   ctx.beginPath();
-  ctx.arc(x - 7, y - h * 0.34, 1.6, 0, Math.PI * 2);
-  ctx.arc(x + 7, y - h * 0.34, 1.6, 0, Math.PI * 2);
+  ctx.arc(x - 7, y - h * 0.35, 1.5, 0, Math.PI * 2);
+  ctx.arc(x + 7, y - h * 0.35, 1.5, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = '#5d2f2f';
-  ctx.lineWidth = 1.8;
+  // Smile lines / cheek marks to match the photo vibe
+  ctx.strokeStyle = '#c28f78';
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(x, y - h * 0.24, 5, Math.PI + 0.25, Math.PI * 2 - 0.25);
+  ctx.moveTo(x - 15, y - h * 0.3);
+  ctx.lineTo(x - 21, y - h * 0.26);
+  ctx.moveTo(x + 15, y - h * 0.3);
+  ctx.lineTo(x + 21, y - h * 0.26);
+  ctx.stroke();
+
+  // Grumpy-but-playful mouth (boss mood)
+  ctx.strokeStyle = '#6a3434';
+  ctx.lineWidth = 1.9;
+  ctx.beginPath();
+  ctx.arc(x, y - h * 0.24, 5.6, Math.PI + 0.2, Math.PI * 2 - 0.2);
   ctx.stroke();
 
   // Speech bubble

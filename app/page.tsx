@@ -163,16 +163,14 @@ export default function HomePage() {
                 </ul>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl border border-ink/25 bg-ink p-6 text-paper shadow-editorial">
-                <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-accent/70 blur-2xl" />
-                <div className="pointer-events-none absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-culture/70 blur-2xl" />
-                <p className="text-xs uppercase tracking-[0.15em] text-paper/80">Cover mock</p>
-                <div className="mt-7 border-y border-paper/30 py-6">
-                  <p className="font-display text-3xl leading-tight">UNPROMPTED</p>
-                  <p className="font-display text-3xl leading-tight">2035</p>
-                </div>
-                <p className="mt-4 text-xs uppercase tracking-[0.12em] text-paper/80">S.W. Gale</p>
-              </div>
+              <figure className="overflow-hidden rounded-xl border border-ink/25 bg-[#071a3a] shadow-editorial">
+                <img
+                  src="/book-cover.svg"
+                  alt="Unprompted 2035 book cover"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </figure>
             </aside>
           </div>
         </section>

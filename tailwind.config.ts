@@ -11,10 +11,10 @@ const config: Config = {
         ink: "#0D1321",
         paper: "#F5F2EB",
         steel: "#D8DEE9",
-        accent: "#FC4C02",
+        accent: "#D9C94A",
         gov: "#365B6D",
-        sci: "#2A7F62",
-        health: "#A25A2B",
+        sci: "#1F6A8A",
+        health: "#7C5B1B",
         econ: "#7743A8",
         culture: "#1E4FA1",
       },
@@ -23,7 +23,7 @@ const config: Config = {
       },
       backgroundImage: {
         noise:
-          "radial-gradient(circle at 20% 20%, rgba(252,76,2,0.08), transparent 40%), radial-gradient(circle at 80% 0%, rgba(30,79,161,0.1), transparent 35%), linear-gradient(180deg, #f5f2eb 0%, #ece9e2 100%)",
+          "radial-gradient(circle at 15% 8%, rgba(217,201,74,0.12), transparent 35%), radial-gradient(circle at 84% 3%, rgba(30,79,161,0.16), transparent 35%), linear-gradient(180deg, #f4f1ea 0%, #ece8de 100%)",
       },
     },
   },
